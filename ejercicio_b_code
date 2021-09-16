@@ -1,0 +1,178 @@
+/*
+ * File:   main.c
+ * Author: Patricio Escalante
+ *
+ * Created on 31 de agosto de 2021, 04:21 PM
+ */
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <xc.h>
+#include "configbits.h"
+
+#define _XTAL_FREQ 4000000
+
+#define cuenta 0
+#define pausa 1
+#define reset 2
+#define boton PORTDbits.RD1
+#define cuentas 3
+
+/*
+ * 
+ */
+
+char digito_1[10]={0b01111110, 0b00110000, 0b01101101, 0b01111001, 0b00110011, 0b01011011, 0b01011111, 0b01110000, 0b011111111, 0b01110011};
+
+
+
+int contador = 0, contador2=0, unidades=0, decenas=0, flag=0, flag_2=0;
+char num1 = 0, num2=0, estado=0;
+
+
+void __interrupt() ISR(void) { 
+contador++;
+contador2++;
+
+if (contador==1){
+    LATDbits.LATD7 = 1;
+    LATDbits.LATD6 = 0;
+}
+
+LATDbits.LATD7 ^= 1;
+LATDbits.LATD6 ^= 1;
+
+if (PORTDbits.RD7 == 1){
+    LATB = digito_1[decenas];
+}
+else{
+    LATB = digito_1[unidades];
+}
+    TMR0L = 228;
+ 
+    INTCONbits.TMR0IF = 0; 
+    
+ return;
+    }
+
+void bip1500(){
+    LATDbits.LATD4= 1;
+    __delay_ms(100);
+    LATDbits.LATD4 = 0;
+    return;
+}
+void bip2000(){
+    LATDbits.LATD5 = 1;
+    __delay_ms(100);
+    LATDbits.LATD5 = 0;
+    return;
+}
+
+
+void tmr0init(){
+    INTCONbits.GIE = 1; // habilitar las interrupciones globales (configurar PEIE = 0)
+    INTCONbits.PEIE = 0; // Deshablitar Interrupciones de periféricos.
+    INTCONbits.TMR0IE = 1; //Habilitar interrupción por desbordamiento de TMR0
+    INTCONbits.INT0IE = 0; // Deshabilitar interrupciones externas.
+    INTCONbits.RBIE = 0; //Deshabilitar interrupción por puerto RB
+    INTCONbits.TMR0IF =0; // Limpiar la bandera de desbordamiento de TMR0
+    RCONbits.IPEN = 0; // Deshabilitar prioridades en las interrupciones
+    T0CONbits.TMR0ON = 1; // Habilitar tmr0
+    T0CONbits.T08BIT = 1; //Configurar timer a 8 bits (puede ser de 16 bits)
+    T0CONbits.T0CS = 0; // Seleccionar que el timer0 se incrementa por ciclo de reloj interno
+    T0CONbits.PSA = 0; // Utilizar un prescaler (para hacer más largo el timpo de cuenta del
+//timer).
+//Los siguientes 3 bits controlan el preescaler, en este caso 1:256
+    T0CONbits.T0PS0 = 1;
+    T0CONbits.T0PS1 = 1;
+    T0CONbits.T0PS2 = 1;
+    TMR0L = 228;
+}
+
+void conteo(){
+    if (contador == 49){
+        unidades++;
+        contador = 0;
+    
+        if (unidades == 10){
+             unidades = 0;
+             decenas++;
+   
+            if (decenas == 6){
+                decenas = 0;
+            }
+        }
+    }
+    return;
+}
+
+void detener(){
+    
+
+    while(boton == 0){
+       flag = 0;
+    }
+        
+    contador2 = 0;
+    if (boton == 1 && flag == 0){
+        bip1500();
+    while(boton == 1 && contador2<99){
+        
+    }
+    if (contador2 < 99){
+        estado = cuentas;
+    }
+    else{
+        estado = reset;
+        bip2000();
+    }
+    }
+    return;
+    
+}
+
+void reinicio(){
+    unidades = 0;
+    decenas = 0;
+    estado = cuenta;
+    contador = 0;
+    __delay_ms(400);
+    return;
+}
+
+void main(){
+    TRISD = 0b00000011;
+    TRISB = 0;
+    LATB = 0;
+    tmr0init();
+    estado=cuenta;
+
+    
+
+    
+    while(1){     
+       
+        
+       TRISDbits.RD1 = estado;
+        if (estado == cuenta ){
+            conteo();
+        }
+        if (estado == pausa){
+            detener();
+        }
+        if (estado == reset){
+            reinicio();
+        }
+        if (estado == cuentas && boton == 0){
+            estado = cuenta; 
+            contador = 0;
+        } 
+        boton = TRISDbits.RD1;
+        if (boton == 1 && estado == cuenta ){
+        bip1500();
+        estado = pausa;
+        flag = 1;
+        }
+    }
+ }
