@@ -1,0 +1,160 @@
+/*
+ * File:   main.c
+ * Author: Patricio Escalante
+ *
+ * Created on 16 de septiembre de 2021, 02:15 AM
+ */
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <xc.h>
+#include "configbits.h"
+
+#define _XTAL_FREQ 4000000
+
+
+/*
+ * 
+ */
+
+char valor[4][4] = {{0,0,0,0},
+                        {0,0,0,0},
+                        {0,0,0,0},
+                        {0,0,0,0}};
+    
+char tecla[4][4] = {{7,8,9,11},
+                    {4,5,6,22},
+                    {1,2,3,33},
+                    {66,110,55,44}};
+
+char salida=0;
+
+char keypadread(){
+        LATDbits.LATD0 = 1;
+        LATDbits.LATD1 = 0;
+        LATDbits.LATD2 = 0;
+        LATDbits.LATD3 = 0;
+        valor[0][0] = PORTDbits.RD4;
+        valor[0][1] = PORTDbits.RD5;
+        valor[0][2] = PORTDbits.RD6;
+        valor[0][3] = PORTDbits.RD7;
+        __delay_ms(5);
+        
+        LATDbits.LATD0 = 0;
+        LATDbits.LATD1 = 1;
+        LATDbits.LATD2 = 0;
+        LATDbits.LATD3 = 0;
+        valor[1][0] = PORTDbits.RD4;
+        valor[1][1] = PORTDbits.RD5;
+        valor[1][2] = PORTDbits.RD6;
+        valor[1][3] = PORTDbits.RD7;
+        __delay_ms(5);
+        
+        LATDbits.LATD0 = 0;
+        LATDbits.LATD1 = 0;
+        LATDbits.LATD2 = 1;
+        LATDbits.LATD3 = 0;
+        valor[2][0] = PORTDbits.RD4;
+        valor[2][1] = PORTDbits.RD5;
+        valor[2][2] = PORTDbits.RD6;
+        valor[2][3] = PORTDbits.RD7;
+        __delay_ms(5);
+        
+        LATDbits.LATD0 = 0;
+        LATDbits.LATD1 = 0;
+        LATDbits.LATD2 = 0;
+        LATDbits.LATD3 = 1;
+        valor[3][0] = PORTDbits.RD4;
+        valor[3][1] = PORTDbits.RD5;
+        valor[3][2] = PORTDbits.RD6;
+        valor[3][3] = PORTDbits.RD7;
+        __delay_ms(5);
+        
+        salida = 0;
+        for(char i=0; i<4; i++){
+            for(char j=0; j<4; j++){
+                if(valor[i][j] > 0){
+                salida = tecla[i][j];    
+                }
+            }
+        }
+        return(salida);
+}
+
+void main(){
+    TRISB = 0;
+    TRISD = 0b11110000;
+    char tecla_oprimida=0;
+    
+    while(1){
+        
+        tecla_oprimida=keypadread();
+        
+        
+        if(tecla_oprimida==7){
+            LATB=0b01110000;
+        }
+        
+        if(tecla_oprimida==8){
+            LATB=0b01111111;
+        }
+        
+        if(tecla_oprimida==9){
+            LATB=0b01110011;
+        }
+        
+        if(tecla_oprimida==4){
+            LATB=0b00110011;
+        }
+        
+        if(tecla_oprimida==5){
+            LATB=0b01011011;
+        }
+        
+        if(tecla_oprimida==6){
+            LATB=0b01011111;
+        }
+        
+        if(tecla_oprimida==1){
+            LATB=0b00110000;
+        }
+        
+        if(tecla_oprimida==2){
+            LATB=0b01101101;
+        }
+        
+        if(tecla_oprimida==3){
+            LATB=0b01111001;
+        }
+        
+        if(tecla_oprimida==110){
+            LATB=0b01111110;
+        }
+        
+        if(tecla_oprimida==11){
+            LATB=0b01110111;
+        }
+        
+        if(tecla_oprimida==22){
+            LATB=0b00011111;
+        }
+        
+        if(tecla_oprimida==33){
+            LATB=0b01001110;
+        }
+        
+        if(tecla_oprimida==44){
+            LATB=0b00111101;
+        }
+        
+        if(tecla_oprimida==55){
+            LATB=0b01001111;
+        }
+        
+        if(tecla_oprimida==66){
+            LATB=0b01000111;
+        }
+       
+    }
+}
