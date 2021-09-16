@@ -1,0 +1,90 @@
+/*
+ * File:   main.c
+ * Author: Patricio Escalante
+ *
+ * Created on 12 de septiembre de 2021, 01:05 PM
+ */
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <xc.h>
+#include "configbits.h"
+
+#define _XTAL_FREQ 4000000
+
+/*
+ * 
+ */
+
+int contador = 0;
+
+//         ? INTRIDUCIR EL TIEMPO EN MILISEGUNDOS.
+char time=0, converted_time=0;
+
+void __interrupt() ISR(void) { 
+ 
+ contador++;
+ 
+  TMR0L = converted_time;
+    
+ INTCONbits.TMR0IF =0; 
+ return; 
+}
+
+void tmr0init(char time){
+    INTCONbits.GIE = 1; // habilitar las interrupciones globales (configurar PEIE = 0)
+    INTCONbits.PEIE = 0; // Deshablitar Interrupciones de periféricos.
+    INTCONbits.TMR0IE = 1; //Habilitar interrupción por desbordamiento de TMR0
+    INTCONbits.INT0IE = 0; // Deshabilitar interrupciones externas.
+    INTCONbits.RBIE = 0; //Deshabilitar interrupción por puerto RB
+    INTCONbits.TMR0IF =0; // Limpiar la bandera de desbordamiento de TMR0
+    RCONbits.IPEN = 0; // Deshabilitar prioridades en las interrupciones
+    T0CONbits.TMR0ON = 1; // Habilitar tmr0
+    T0CONbits.T08BIT = 1; //Configurar timer a 8 bits (puede ser de 16 bits)
+    T0CONbits.T0CS = 0; // Seleccionar que el timer0 se incrementa por ciclo de reloj interno
+    T0CONbits.PSA = 0; // Utilizar un prescaler (para hacer más largo el timpo de cuenta del
+//timer).
+//Los siguientes 3 bits controlan el preescaler, en este caso 1:256
+    T0CONbits.T0PS0 = 1;
+    T0CONbits.T0PS1 = 1;
+    T0CONbits.T0PS2 = 1;
+    
+    converted_time=(256)-((time*1000)/(256));
+    
+
+    
+    TMR0L = converted_time;
+}
+
+
+void main(){
+    TRISD = 0;
+    TRISB = 255;
+    char boton = 0;
+    time=10;
+    tmr0init(time);
+    
+    while(1){
+        boton = PORTBbits.RB7;
+        if(boton == 1){
+          LATDbits.LATD5 = 1;
+        }else {
+          LATDbits.LATD5 = 0;
+          }
+        
+        
+        
+        if(contador == 299){
+        LATDbits.LATD4 = 1;
+        }
+    
+        if(contador == 599){
+        LATDbits.LATD4 = 0;
+        contador = 0;
+        }
+    
+    }
+    
+    
+}
